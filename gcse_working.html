@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCSE Maths & Physics Quiz</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" ></script>
+<style>
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 15px;
+    background: #0f2027;
+    font-family: Arial, sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+    position: relative;
+}
+canvas.backgroundAtoms, canvas.confetti {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+canvas.backgroundAtoms { z-index: 0; }
+canvas.confetti { z-index: 10; }
+.quiz-container {
+    background: rgba(15,32,39,0.9);
+    border: 3px solid #66ccff;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    width: min(900px, 95%);
+    min-height: calc(100vh - 30px);
+
+    padding: 25px;
+    box-sizing: border-box;
+
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+
+    position: relative;
+    z-index: 5;
+
+    display: flex;
+    flex-direction: column;
+}
+h1 { text-align: center; color: #66ccff; margin-top: 2px; margin-bottom: 4px;  font-size: 32px; }
+.select-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;      /* new spacing from top */
+    margin-bottom: 6px;
+}
+
+select, input, textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 2px solid #66ccff;
+    background: rgba(15,32,39,0.9);
+    color: #fff;
+    font-size: 18px;
+    box-sizing: border-box;
+}
+
+#answerInput {
+    width: 100%;          /* full width of its parent */
+    box-sizing: border-box; /* include padding in width */
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 6px;
+    border: 2px solid #66ccff;
+    background: rgba(15,32,39,0.9);
+    color: #fff; 
+    resize: none;
+    overflow: hidden;
+}
+
+.input-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 8px; }
+.question-box {
+    flex-grow:1;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid #66ccff;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 10px 0;
+    min-height: 60px;
+    font-size: 20px;
+	line-height: 1.5;
+    word-wrap: break-word;
+}
+.button-row {
+    display: flex; justify-content: center; gap: 12px; margin-top: 12px;
+}
+.button-row button {
+    flex: 1; max-width: 200px; padding: 10px; border: none; border-radius: 6px;
+    font-size: 14px; font-weight: bold; cursor: pointer;
+}
+.primary { background: #ffcc00; color: #000; }
+.secondary { background: #66ccff; color: #000; }
+.math-preview {
+    margin-top: 6px;
+    padding: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid #66ccff;
+    border-radius: 6px;
+    text-align: center;
+    min-height: 24px;
+}
+.symbol-toolbar { display: grid; grid-template-columns: repeat(10,1fr); gap: 6px; margin: 10px 0; }
+
+@media (max-width: 600px) {
+    .symbol-toolbar {
+        grid-template-columns: repeat(8, minmax(0, 1fr)); /* forces 8 columns without wrapping */
+        gap: 3px;   /* smaller gap to fit screen */
+        margin: 4px 0;
+    }
+
+    .symbol-toolbar button {
+        padding: 6px;     /* smaller buttons */
+        font-size: 14px;  /* smaller font */
+        border-radius: 4px;
+    }
+}
+.symbol-btn {
+    background: #66ccff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 11px;        /* bigger button size */
+    font-size: 18px;      /* bigger numbers & symbols */
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.symbol-btn:hover {
+    background: #ffcc00;
+    transform: scale(1.05);
+}
+#feedback { margin-top: 10px; font-weight: bold; text-align: center; font-size: 24px; }
+#hintBtn { margin-top: 6px; text-align: center; cursor: pointer; color: #ffcc00; text-decoration: underline; }
+#keyboardToggle { margin-top: 12px; width: 100%; background: #ffcc00; color: #000; border: none; border-radius: 6px; padding: 14px; font-weight: bold; cursor: pointer; }
+.progress-container { width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 12px; }
+.progress-bar-inner { width: 0%; height: 24px; background: #ffcc00; border-radius: 10px; transition: width 0.3s; }
+#score { text-align: center; margin-top: 6px; font-size: 14px; color: #66ccff; }
+@media screen and (max-width:700px){
+    .quiz-container{ width:95%; padding:15px; }
+    .select-row{ grid-template-columns: 1fr; }
+    .input-row{
+    grid-template-columns: 1fr;
+    width: 100%;
+   }
+}
+/* Add new adjustments for smaller phones */
+@media screen and (max-width:600px) {
+    .quiz-container {
+        width: 95%;
+        padding: 10px;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin-bottom: 2px;
+    }
+	
+	.select-row select {
+    font-size: 18px;      /* smaller text */
+    padding: 6px 6px;     /* less padding */
+    }
+    .select-row {
+    gap: 6px;             /* reduce gap between dropdowns */
+    }
+
+    #answerInput {
+        font-size: 18px;
+        padding: 8px;
+    }
+
+    .math-preview {
+        font-size: 18px;
+        padding: 6px;
+    }
+
+    .input-row {
+        gap: 6px;
+    }
+
+    .symbol-toolbar {
+        gap: 3px;
+        margin: 4px 0;
+        font-size: 14px;
+    }
+
+    .symbol-btn {
+        padding: 6px;
+        font-size: 14px;
+    }
+
+    #keyboardToggle {
+        padding: 6px;
+        font-size: 10px;
+    }
+
+    .button-row button {
+        font-size: 12px;
+        padding: 6px;
+    }
+	
+	#feedback {
+    font-size: 16px;   /* smaller text on mobile */
+    line-height: 1.3;  /* keep it readable */
+    }
+
+    #hintBtn {
+        font-size: 16px;
+        margin-top: 4px;
+    }
+
+    .progress-bar-inner {
+        height: 10px;
+    }
+
+    #score {
+        font-size: 12px;
+    }
+}
+
+</style>
+</head>
+<body>
+<canvas class="backgroundAtoms" id="atomsCanvas"></canvas>
+<canvas class="confetti" id="confettiCanvas"></canvas>
+
+<div class="quiz-container">
+<h1>GCSE Maths Quiz</h1>
+<div class="select-row">
+    <select id="subjectSelect"><option value="">Subject</option></select>
+    <select id="topicSelect"><option value="">Topic</option></select>
+    <select id="difficultySelect">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+</div>
+<div id="questionBox" class="question-box">Select options above and type your answer.</div>
+<div class="input-row">
+    <textarea id="answerInput" placeholder="Type your answer..." rows="1" readonly></textarea>  
+</div>
+<div class="math-preview">
+Preview: <span id="mathPreviewContent">\( \)</span>
+</div>
+<button id="keyboardToggle">Math Keyboard On/Off</button>
+<div id="symbolToolbar" class="symbol-toolbar">
+  <button class="symbol-btn" data-symbol="0">0</button>
+  <button class="symbol-btn" data-symbol="1">1</button>
+  <button class="symbol-btn" data-symbol="2">2</button>
+  <button class="symbol-btn" data-symbol="3">3</button>
+  <button class="symbol-btn" data-symbol="4">4</button>
+  <button class="symbol-btn" data-symbol="5">5</button>
+  <button class="symbol-btn" data-symbol="6">6</button>
+  <button class="symbol-btn" data-symbol="7">7</button>
+  <button class="symbol-btn" data-symbol="8">8</button>
+  <button class="symbol-btn" data-symbol="9">9</button>
+
+  <!-- Basic symbols -->
+  <button class="symbol-btn" data-symbol="+">+</button>
+  <button class="symbol-btn" data-symbol="−">−</button>
+  <button class="symbol-btn" data-symbol="×">×</button>
+  <button class="symbol-btn" data-symbol="÷">÷</button>
+  <button class="symbol-btn" data-symbol="x">X</button>
+  <button class="symbol-btn" data-symbol="y">Y</button>
+  <button class="symbol-btn" data-symbol="a">a</button>
+  <button class="symbol-btn" data-symbol="b">b</button>
+  <button class="symbol-btn" data-symbol="c">c</button>
+  <button class="symbol-btn" data-symbol="n">n</button>
+  <button class="symbol-btn" data-symbol="<">&lt;</button>
+  <button class="symbol-btn" data-symbol=">">&gt;</button>
+  <button class="symbol-btn" data-symbol="≤">≤</button>
+  <button class="symbol-btn" data-symbol="≥">≥</button>
+  <button class="symbol-btn" data-symbol="."><b>.</b></button>
+  <button class="symbol-btn" data-symbol=":"><b>:</b></button>
+
+  <!-- Templates -->
+  <button class="symbol-btn" data-template="sqrt">√</button>
+  <button class="symbol-btn" data-template="power">x²</button>
+  <button class="symbol-btn" data-template="fraction">a/b</button>
+  <button class="symbol-btn" data-symbol="π">π</button>
+  <button class="symbol-btn" data-symbol="°">°</button>
+  <button class="symbol-btn" data-symbol="sin()">sin</button>
+  <button class="symbol-btn" data-symbol="cos()">cos</button>
+  <button class="symbol-btn" data-symbol="tan()">tan</button>
+  <button class="symbol-btn" data-symbol="()">()</button>
+  <button class="symbol-btn" data-symbol="%">%</button>
+  <button class="symbol-btn" data-symbol="=">=</button>
+  <button class="symbol-btn" data-symbol="^">^</button>
+  <button class="symbol-btn" data-template="scientific">10^x</button>
+  
+  <!-- Backspace (replaces =) -->
+  <button class="symbol-btn" id="backspaceBtn">⌫</button>
+</div>
+<div class="button-row">
+    <button id="submitBtn" class="primary">Submit Answer</button>
+    <button id="nextBtn" class="secondary">Next Question</button>
+</div>
+<div id="feedback"></div>
+<div id="hintBtn">Show Hint</div>
+<div class="progress-container"><div class="progress-bar-inner" id="progressBar"></div></div>
+<div id="score"></div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", ()=>{
+const QUESTIONS = {
+ Math: {
+ numbers: [
+  // ===== Easy (1–20) =====
+  { q: "What is 7 + 5?", answer: "12", difficulty: "easy", tip: "Add the numbers", solution: "Simplify: \\(7 + 5 = 12\\)" },
+  { q: "Convert \\(\\frac{3}{4}\\) to a decimal", answer: "0.75", difficulty: "easy", tip: "Divide numerator by denominator", solution: "Divide: \\(3 \\div 4 = 0.75\\)" },
+  { q: "What is 15 - 6?", answer: "9", difficulty: "easy", tip: "Subtract second number from first", solution: "Simplify: \\(15 - 6 = 9\\)" },
+  { q: "Convert 50% to a fraction", answer: "1/2", difficulty: "easy", tip: "Percent means out of 100", solution: "Fraction: \\(50\\% = \\frac{50}{100} = \\frac{1}{2}\\)" },
+  { q: "What is 8 × 3?", answer: "24", difficulty: "easy", tip: "Multiply numbers", solution: "Simplify: \\(8 \\times 3 = 24\\)" },
+  { q: "What is 18 ÷ 6?", answer: "3", difficulty: "easy", tip: "Divide numbers", solution: "Simplify: \\(18 \\div 6 = 3\\)" },
+  { q: "Convert 25% to a decimal", answer: "0.25", difficulty: "easy", tip: "Percent to decimal", solution: "Convert: \\(25\\% = 0.25\\)" },
+  { q: "What is 9 + 4?", answer: "13", difficulty: "easy", tip: "Add numbers", solution: "Simplify: \\(9 + 4 = 13\\)" },
+  { q: "What is 14 - 8?", answer: "6", difficulty: "easy", tip: "Subtract numbers", solution: "Simplify: \\(14 - 8 = 6\\)" },
+  { q: "Convert \\(\\frac{1}{2}\\) to a decimal", answer: "0.5", difficulty: "easy", tip: "Divide numerator by denominator", solution: "Divide: \\(1 \\div 2 = 0.5\\)" },
+  { q: "What is 6 × 7?", answer: "42", difficulty: "easy", tip: "Multiply numbers", solution: "Simplify: \\(6 \\times 7 = 42\\)" },
+  { q: "What is 20 ÷ 4?", answer: "5", difficulty: "easy", tip: "Divide numbers", solution: "Simplify: \\(20 \\div 4 = 5\\)" },
+  { q: "Convert 75% to a fraction", answer: "3/4", difficulty: "easy", tip: "Percent to fraction", solution: "Convert: \\(75\\% = \\frac{75}{100} = \\frac{3}{4}\\)" },
+  { q: "What is 10 + 15?", answer: "25", difficulty: "easy", tip: "Add numbers", solution: "Simplify: \\(10 + 15 = 25\\)" },
+  { q: "What is 13 - 7?", answer: "6", difficulty: "easy", tip: "Subtract numbers", solution: "Simplify: \\(13 - 7 = 6\\)" },
+  { q: "Convert \\(\\frac{2}{5}\\) to a decimal", answer: "0.4", difficulty: "easy", tip: "Divide numerator by denominator", solution: "Divide: \\(2 \\div 5 = 0.4\\)" },
+  { q: "What is 5 × 9?", answer: "45", difficulty: "easy", tip: "Multiply numbers", solution: "Simplify: \\(5 \\times 9 = 45\\)" },
+  { q: "What is 24 ÷ 6?", answer: "4", difficulty: "easy", tip: "Divide numbers", solution: "Simplify: \\(24 \\div 6 = 4\\)" },
+  { q: "Convert 20% to a fraction", answer: "1/5", difficulty: "easy", tip: "Percent to fraction", solution: "Convert: \\(20\\% = \\frac{20}{100} = \\frac{1}{5}\\)" },
+  { q: "What is 11 + 8?", answer: "19", difficulty: "easy", tip: "Add numbers", solution: "Simplify: \\(11 + 8 = 19\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "Add \\(12.5 + 7.3\\)", answer: "19.8", difficulty: "medium", tip: "Add decimals carefully", solution: "Simplify: \\(12.5 + 7.3 = 19.8\\)" },
+  { q: "Convert \\(\\frac{7}{8}\\) to a decimal", answer: "0.875", difficulty: "medium", tip: "Divide numerator by denominator", solution: "Divide: \\(7 \\div 8 = 0.875\\)" },
+  { q: "What is 25 × 4?", answer: "100", difficulty: "medium", tip: "Multiply numbers", solution: "Simplify: \\(25 \\times 4 = 100\\)" },
+  { q: "Convert 0.2 to a fraction", answer: "1/5", difficulty: "medium", tip: "Decimal to fraction", solution: "Fraction: \\(0.2 = \\frac{1}{5}\\)" },
+  { q: "Subtract \\(15.6 - 7.2\\)", answer: "8.4", difficulty: "medium", tip: "Subtract decimals", solution: "Simplify: \\(15.6 - 7.2 = 8.4\\)" },
+  { q: "Multiply \\(0.5 \\times 0.6\\)", answer: "0.3", difficulty: "medium", tip: "Multiply decimals", solution: "Multiply: \\(0.5 \\times 0.6 = 0.3\\)" },
+  { q: "Convert \\(\\frac{5}{8}\\) to a decimal", answer: "0.625", difficulty: "medium", tip: "Divide numerator by denominator", solution: "Divide: \\(5 \\div 8 = 0.625\\)" },
+  { q: "Convert 40% to a fraction", answer: "2/5", difficulty: "medium", tip: "Percent to fraction", solution: "Fraction: \\(40\\% = \\frac{40}{100} = \\frac{2}{5}\\)" },
+  { q: "Add \\(3.25 + 4.75\\)", answer: "8", difficulty: "medium", tip: "Add decimals", solution: "Simplify: \\(3.25 + 4.75 = 8\\)" },
+  { q: "Subtract \\(10.5 - 2.25\\)", answer: "8.25", difficulty: "medium", tip: "Subtract decimals", solution: "Simplify: \\(10.5 - 2.25 = 8.25\\)" },
+  { q: "Multiply \\(1.5 \\times 4\\)", answer: "6", difficulty: "medium", tip: "Multiply decimals", solution: "Multiply: \\(1.5 \\times 4 = 6\\)" },
+  { q: "Convert \\(\\frac{9}{10}\\) to a decimal", answer: "0.9", difficulty: "medium", tip: "Divide numerator by denominator", solution: "Divide: \\(9 \\div 10 = 0.9\\)" },
+  { q: "Convert 60% to a fraction", answer: "3/5", difficulty: "medium", tip: "Percent to fraction", solution: "Fraction: \\(60\\% = \\frac{60}{100} = \\frac{3}{5}\\)" },
+  { q: "Add \\(0.75 + 1.25\\)", answer: "2", difficulty: "medium", tip: "Add decimals", solution: "Simplify: \\(0.75 + 1.25 = 2\\)" },
+  { q: "Subtract \\(2.5 - 0.75\\)", answer: "1.75", difficulty: "medium", tip: "Subtract decimals", solution: "Simplify: \\(2.5 - 0.75 = 1.75\\)" },
+  { q: "Multiply \\(0.4 \\times 0.5\\)", answer: "0.2", difficulty: "medium", tip: "Multiply decimals", solution: "Multiply: \\(0.4 \\times 0.5 = 0.2\\)" },
+  { q: "Convert \\(\\frac{3}{5}\\) to a decimal", answer: "0.6", difficulty: "medium", tip: "Divide numerator by denominator", solution: "Divide: \\(3 \\div 5 = 0.6\\)" },
+  { q: "Convert 80% to a fraction", answer: "4/5", difficulty: "medium", tip: "Percent to fraction", solution: "Fraction: \\(80\\% = \\frac{80}{100} = \\frac{4}{5}\\)" },
+  { q: "Add \\(1.2 + 2.3\\)", answer: "3.5", difficulty: "medium", tip: "Add decimals", solution: "Simplify: \\(1.2 + 2.3 = 3.5\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "Simplify \\(\\frac{45}{60}\\)", answer: "3/4", difficulty: "hard", tip: "Divide numerator and denominator by GCD", solution: "Simplify: \\(\\frac{45}{60} = \\frac{3}{4}\\)" },
+  { q: "Convert \\(\\frac{7}{8}\\) to a percentage", answer: "87.5", difficulty: "hard", tip: "Divide and multiply by 100", solution: "Percentage: \\(\\frac{7}{8} \\times 100 = 87.5\\%\\)" },
+  { q: "Calculate 12.75 - 4.8", answer: "7.95", difficulty: "hard", tip: "Subtract decimals", solution: "Simplify: \\(12.75 - 4.8 = 7.95\\)" },
+  { q: "Simplify \\(\\frac{56}{98}\\)", answer: "4/7", difficulty: "hard", tip: "Divide numerator and denominator by GCD", solution: "Simplify: \\(\\frac{56}{98} = \\frac{4}{7}\\)" },
+  { q: "Convert \\(\\frac{11}{16}\\) to a decimal", answer: "0.6875", difficulty: "hard", tip: "Divide numerator by denominator", solution: "Divide: \\(11 \\div 16 = 0.6875\\)" },
+  { q: "Convert 125% to a decimal", answer: "1.25", difficulty: "hard", tip: "Percent to decimal", solution: "Convert: \\(125\\% = 1.25\\)" },
+  { q: "Calculate \\(3.75 + 4.125\\)", answer: "7.875", difficulty: "hard", tip: "Add decimals", solution: "Simplify: \\(3.75 + 4.125 = 7.875\\)" },
+  { q: "Subtract \\(10.5 - 3.75\\)", answer: "6.75", difficulty: "hard", tip: "Subtract decimals", solution: "Simplify: \\(10.5 - 3.75 = 6.75\\)" },
+  { q: "Multiply \\(1.25 \\times 0.8\\)", answer: "1", difficulty: "hard", tip: "Multiply decimals", solution: "Multiply: \\(1.25 \\times 0.8 = 1\\)" },
+  { q: "Simplify \\(\\frac{81}{108}\\)", answer: "3/4", difficulty: "hard", tip: "Divide numerator and denominator by GCD", solution: "Simplify: \\(\\frac{81}{108} = \\frac{3}{4}\\)" },
+  { q: "Convert \\(\\frac{5}{16}\\) to a decimal", answer: "0.3125", difficulty: "hard", tip: "Divide numerator by denominator", solution: "Divide: \\(5 \\div 16 = 0.3125\\)" }
+],
+  algebra: [
+  // ===== Easy (1–20) =====
+  { q: "Simplify \\(x + x\\)", answer: "2x", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(x + x = 2x\\)" },
+  { q: "Solve \\(x + 5 = 12\\) for \\(x\\)", answer: "x=7", difficulty: "easy", tip: "Subtract 5 from both sides", solution: "Subtract: \\(x = 12 - 5 = 7\\)" },
+  { q: "Simplify \\(3x + 2x\\)", answer: "5x", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(3x + 2x = 5x\\)" },
+  { q: "Solve \\(2x = 14\\) for \\(x\\)", answer: "x=7", difficulty: "easy", tip: "Divide both sides by 2", solution: "Divide: \\(x = 14 / 2 = 7\\)" },
+  { q: "Simplify \\(5y - 2y\\)", answer: "3y", difficulty: "easy", tip: "Subtract like terms", solution: "Subtract: \\(5y - 2y = 3y\\)" },
+  { q: "Solve \\(x - 4 = 10\\) for \\(x\\)", answer: "x=14", difficulty: "easy", tip: "Add 4 to both sides", solution: "Add: \\(x = 10 + 4 = 14\\)" },
+  { q: "Simplify \\(2a + 4a\\)", answer: "6a", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(2a + 4a = 6a\\)" },
+  { q: "Solve \\(3x + 5 = 14\\) for \\(x\\)", answer: "x=3", difficulty: "easy", tip: "Subtract 5 and divide by 3", solution: "Subtract then divide: \\(3x = 9 \\Rightarrow x = 3\\)" },
+  { q: "Simplify \\(7b - 3b\\)", answer: "4b", difficulty: "easy", tip: "Subtract like terms", solution: "Subtract: \\(7b - 3b = 4b\\)" },
+  { q: "Solve \\(5x = 25\\) for \\(x\\)", answer: "x=5", difficulty: "easy", tip: "Divide both sides by 5", solution: "Divide: \\(x = 25 / 5 = 5\\)" },
+  { q: "Simplify \\(x + 2x + 3x\\)", answer: "6x", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(x + 2x + 3x = 6x\\)" },
+  { q: "Solve \\(\\frac{x}{2} = 6\\) for \\(x\\)", answer: "x=12", difficulty: "easy", tip: "Multiply both sides by 2", solution: "Multiply: \\(x = 6 \\times 2 = 12\\)" },
+  { q: "Simplify \\(4y + 3y - 2y\\)", answer: "5y", difficulty: "easy", tip: "Combine like terms", solution: "Combine: \\(4y + 3y - 2y = 5y\\)" },
+  { q: "Solve \\(x + 7 = 15\\) for \\(x\\)", answer: "x=8", difficulty: "easy", tip: "Subtract 7 from both sides", solution: "Subtract: \\(x = 15 - 7 = 8\\)" },
+  { q: "Simplify \\(6a - 2a\\)", answer: "4a", difficulty: "easy", tip: "Subtract like terms", solution: "Subtract: \\(6a - 2a = 4a\\)" },
+  { q: "Solve \\(2x + 3 = 11\\) for \\(x\\)", answer: "x=4", difficulty: "easy", tip: "Subtract 3 and divide by 2", solution: "Subtract then divide: \\(2x = 8 \\Rightarrow x = 4\\)" },
+  { q: "Simplify \\(3b + 5b\\)", answer: "8b", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(3b + 5b = 8b\\)" },
+  { q: "Solve \\(x - 6 = 9\\) for \\(x\\)", answer: "x=15", difficulty: "easy", tip: "Add 6 to both sides", solution: "Add: \\(x = 9 + 6 = 15\\)" },
+  { q: "Simplify \\(2x + x + 3x\\)", answer: "6x", difficulty: "easy", tip: "Add like terms", solution: "Combine: \\(2x + x + 3x = 6x\\)" },
+  { q: "Solve \\(3x = 18\\) for \\(x\\)", answer: "x=6", difficulty: "easy", tip: "Divide both sides by 3", solution: "Divide: \\(x = 18 / 3 = 6\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "Solve \\(2x + 5 = 13\\) for \\(x\\)", answer: "x=4", difficulty: "medium", tip: "Subtract 5 and divide by 2", solution: "Subtract then divide: \\(2x = 8 \\Rightarrow x = 4\\)" },
+  { q: "Simplify \\(4x + 3x - 2x\\)", answer: "5x", difficulty: "medium", tip: "Combine like terms", solution: "Simplify: \\(4x + 3x - 2x = 5x\\)" },
+  { q: "Solve \\(3x - 7 = 11\\) for \\(x\\)", answer: "x=6", difficulty: "medium", tip: "Add 7 and divide by 3", solution: "Simplify: \\(3x = 18 \\Rightarrow x = 6\\)" },
+  { q: "Factorise \\(x^2 + 5x + 6\\)", answer: "(x + 2)(x + 3)", difficulty: "medium", tip: "Find two numbers that multiply to 6 and add to 5", solution: "\\(x^2 + 5x + 6 = (x + 2)(x + 3)\\)" },
+  { q: "Solve \\(5x - 3 = 12\\) for \\(x\\)", answer: "x=3", difficulty: "medium", tip: "Add 3 and divide by 5", solution: "Simplify: \\(5x = 15 \\Rightarrow x = 3\\)" },
+  { q: "Simplify \\(3a + 4a - 2a\\)", answer: "5a", difficulty: "medium", tip: "Combine like terms", solution: "Simplify: \\(3a + 4a - 2a = 5a\\)" },
+  { q: "Solve \\(2x - 7 = 9\\) for \\(x\\)", answer: "x=8", difficulty: "medium", tip: "Add 7 and divide by 2", solution: "Simplify: \\(2x = 16 \\Rightarrow x = 8\\)" },
+  { q: "Expand \\((x + 3)(x + 2)\\)", answer: "x^2 + 5x + 6", difficulty: "medium", tip: "Multiply each term", solution: "\\((x + 3)(x + 2) = x^2 + 5x + 6\\)" },
+  { q: "Solve \\(3x + 2 = 14\\) for \\(x\\)", answer: "x=4", difficulty: "medium", tip: "Subtract 2 then divide by 3", solution: "Simplify: \\(3x = 12 \\Rightarrow x = 4\\)" },
+  { q: "Factorise \\(x^2 + 7x + 10\\)", answer: "(x + 5)(x + 2)", difficulty: "medium", tip: "Find two numbers that multiply to 10 and add to 7", solution: "\\(x^2 + 7x + 10 = (x + 5)(x + 2)\\)" },
+  { q: "Simplify \\(5b + 3b - 2b\\)", answer: "6b", difficulty: "medium", tip: "Combine like terms", solution: "Simplify: \\(5b + 3b - 2b = 6b\\)" },
+  { q: "Solve \\(4x + 5 = 17\\) for \\(x\\)", answer: "x=3", difficulty: "medium", tip: "Subtract 5 then divide by 4", solution: "Simplify: \\(4x = 12 \\Rightarrow x = 3\\)" },
+  { q: "Solve \\(\\frac{x}{3} + 2 = 5\\) for \\(x\\)", answer: "x=9", difficulty: "medium", tip: "Subtract 2 then multiply by 3", solution: "\\(x/3 = 3 \\Rightarrow x = 9\\)" },
+  { q: "Expand \\((x + 4)(x + 1)\\)", answer: "x^2 + 5x + 4", difficulty: "medium", tip: "Multiply each term", solution: "\\((x + 4)(x + 1) = x^2 + 5x + 4\\)" },
+  { q: "Solve \\(2x + 7 = 15\\) for \\(x\\)", answer: "x=4", difficulty: "medium", tip: "Subtract 7 and divide by 2", solution: "Simplify: \\(2x = 8 \\Rightarrow x = 4\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "Solve \\(2x^2 - 8x = 0\\) for \\(x\\)", answer: "0,4", difficulty: "hard", tip: "Factorise and solve each factor", solution: "\\(2x^2 - 8x = 2x(x - 4) = 0 \\Rightarrow x = 0, 4\\)" },
+  { q: "Solve \\(x^2 + 5x + 6 = 0\\) for \\(x\\)", answer: "-2,-3", difficulty: "hard", tip: "Factorise quadratic", solution: "\\(x^2 + 5x + 6 = (x + 2)(x + 3) = 0 \\Rightarrow x = -2, -3\\)" },
+  { q: "Solve \\(3x^2 - 12x = 0\\) for \\(x\\)", answer: "0,4", difficulty: "hard", tip: "Factorise quadratic", solution: "\\(3x^2 - 12x = 3x(x - 4) = 0 \\Rightarrow x = 0, 4\\)" },
+  { q: "Expand \\((x + 2)(x + 5)\\)", answer: "x^2 + 7x + 10", difficulty: "hard", tip: "Multiply each term", solution: "\\((x + 2)(x + 5) = x^2 + 7x + 10\\)" },
+  { q: "Factorise \\(x^2 + 8x + 15\\)", answer: "(x + 3)(x + 5)", difficulty: "hard", tip: "Find factors of 15 that add to 8", solution: "\\(x^2 + 8x + 15 = (x + 3)(x + 5)\\)" },
+  { q: "Solve \\(x^2 - 5x + 6 = 0\\) for \\(x\\)", answer: "2,3", difficulty: "hard", tip: "Factorise quadratic", solution: "\\(x^2 - 5x + 6 = (x - 2)(x - 3) = 0 \\Rightarrow x = 2, 3\\)" },
+  { q: "Solve \\(2x^2 + 7x + 3 = 0\\) for \\(x\\)", answer: "-3/2,-1", difficulty: "hard", tip: "Factorise or quadratic formula", solution: "\\(2x^2 + 7x + 3 = (2x + 1)(x + 3) = 0 \\Rightarrow x = -1, -3/2\\)" },
+  { q: "Expand \\((x + 3)(x + 4)\\)", answer: "x^2 + 7x + 12", difficulty: "hard", tip: "Multiply each term", solution: "\\((x + 3)(x + 4) = x^2 + 7x + 12\\)" }
+],
+  ratio_proportion: [
+  // ===== Easy (1–20) =====
+  { q: "Simplify the ratio \\(6:12\\)", answer: "1:2", difficulty: "easy", tip: "Divide both parts by 6", solution: "Divide both parts by 6: \\(6:12 = 1:2\\)" },
+  { q: "Simplify the ratio \\(10:5\\)", answer: "2:1", difficulty: "easy", tip: "Divide both parts by 5", solution: "Divide by 5: \\(10:5 = 2:1\\)" },
+  { q: "Write \\(\\frac{3}{4}\\) as a ratio", answer: "3:4", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(3/4 = 3:4\\)" },
+  { q: "Simplify \\(8:20\\)", answer: "2:5", difficulty: "easy", tip: "Divide by 4", solution: "Divide both parts by 4: \\(8:20 = 2:5\\)" },
+  { q: "Simplify \\(15:5\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 5", solution: "\\(15:5 = 3:1\\)" },
+  { q: "Write \\(\\frac{2}{5}\\) as a ratio", answer: "2:5", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(2/5 = 2:5\\)" },
+  { q: "Simplify \\(9:3\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 3", solution: "\\(9:3 = 3:1\\)" },
+  { q: "Simplify \\(14:7\\)", answer: "2:1", difficulty: "easy", tip: "Divide by 7", solution: "\\(14:7 = 2:1\\)" },
+  { q: "Write \\(\\frac{5}{8}\\) as a ratio", answer: "5:8", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(5/8 = 5:8\\)" },
+  { q: "Simplify \\(4:16\\)", answer: "1:4", difficulty: "easy", tip: "Divide by 4", solution: "\\(4:16 = 1:4\\)" },
+  { q: "Simplify \\(21:7\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 7", solution: "\\(21:7 = 3:1\\)" },
+  { q: "Write \\(\\frac{7}{10}\\) as a ratio", answer: "7:10", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(7/10 = 7:10\\)" },
+  { q: "Simplify \\(18:6\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 6", solution: "\\(18:6 = 3:1\\)" },
+  { q: "Simplify \\(12:18\\)", answer: "2:3", difficulty: "easy", tip: "Divide by 6", solution: "\\(12:18 = 2:3\\)" },
+  { q: "Write \\(\\frac{9}{11}\\) as a ratio", answer: "9:11", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(9/11 = 9:11\\)" },
+  { q: "Simplify \\(25:5\\)", answer: "5:1", difficulty: "easy", tip: "Divide by 5", solution: "\\(25:5 = 5:1\\)" },
+  { q: "Simplify \\(16:24\\)", answer: "2:3", difficulty: "easy", tip: "Divide by 8", solution: "\\(16:24 = 2:3\\)" },
+  { q: "Write \\(\\frac{11}{12}\\) as a ratio", answer: "11:12", difficulty: "easy", tip: "Fraction to ratio", solution: "\\(11/12 = 11:12\\)" },
+  { q: "Simplify \\(30:10\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 10", solution: "\\(30:10 = 3:1\\)" },
+  { q: "Simplify \\(45:15\\)", answer: "3:1", difficulty: "easy", tip: "Divide by 15", solution: "\\(45:15 = 3:1\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "Share £20 in the ratio \\(1:4\\)", answer: "4,16", difficulty: "medium", tip: "Total parts = 5", solution: "Total parts = 5. Each part = 4. Shares: \\(4,16\\)" },
+  { q: "Share £30 in the ratio \\(2:3\\)", answer: "12,18", difficulty: "medium", tip: "Total parts = 5", solution: "Each part = 6. Shares: \\(12,18\\)" },
+  { q: "Share £24 in the ratio \\(1:2\\)", answer: "8,16", difficulty: "medium", tip: "Total parts = 3", solution: "Each part = 8. Shares: \\(8,16\\)" },
+  { q: "Share £40 in the ratio \\(3:1\\)", answer: "30,10", difficulty: "medium", tip: "Total parts = 4", solution: "Each part = 10. Shares: \\(30,10\\)" },
+  { q: "Share £36 in the ratio \\(2:1\\)", answer: "24,12", difficulty: "medium", tip: "Total parts = 3", solution: "Each part = 12. Shares: \\(24,12\\)" },
+  { q: "Share £50 in the ratio \\(4:1\\)", answer: "40,10", difficulty: "medium", tip: "Total parts = 5", solution: "Each part = 10. Shares: \\(40,10\\)" },
+  { q: "Share £60 in the ratio \\(1:5\\)", answer: "10,50", difficulty: "medium", tip: "Total parts = 6", solution: "Each part = 10. Shares: \\(10,50\\)" },
+  { q: "Share £45 in the ratio \\(2:3\\)", answer: "18,27", difficulty: "medium", tip: "Total parts = 5", solution: "Each part = 9. Shares: \\(18,27\\)" },
+  { q: "Share £28 in the ratio \\(3:4\\)", answer: "12,16", difficulty: "medium", tip: "Total parts = 7", solution: "Each part = 4. Shares: \\(12,16\\)" },
+  { q: "Share £72 in the ratio \\(5:1\\)", answer: "60,12", difficulty: "medium", tip: "Total parts = 6", solution: "Each part = 12. Shares: \\(60,12\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "If \\(y\\propto x\\) and \\(y=12\\) when \\(x=3\\), find \\(y\\) when \\(x=5\\)", answer: "20", difficulty: "hard", tip: "Find constant of proportionality", solution: "k = 4 so \\(y = 4x = 20\\)" },
+  { q: "If \\(y \\propto x\\) and \\(y=18\\) when \\(x=6\\), find \\(y\\) when \\(x=10\\)", answer: "30", difficulty: "hard", tip: "Find k", solution: "k = 3 so \\(y = 3x = 30\\)" },
+  { q: "If \\(y \\propto x\\) and \\(y=20\\) when \\(x=4\\), find \\(y\\) when \\(x=7\\)", answer: "35", difficulty: "hard", tip: "Find k", solution: "k = 5 so \\(y = 5x = 35\\)" },
+  { q: "If \\(y\\propto 1/x\\) and \\(y=6\\) when \\(x=2\\), find \\(y\\) when \\(x=4\\)", answer: "3", difficulty: "hard", tip: "yx = constant", solution: "k = 12 so \\(y = 12/4 = 3\\)" },
+  { q: "If \\(y \\propto 1/x\\) and \\(y=8\\) when \\(x=3\\), find \\(y\\) when \\(x=6\\)", answer: "4", difficulty: "hard", tip: "Use inverse proportion", solution: "k = 24 so \\(y = 24/6 = 4\\)" },
+  { q: "If \\(y \\propto x\\) and \\(y=15\\) when \\(x=5\\), find \\(y\\) when \\(x=12\\)", answer: "36", difficulty: "hard", tip: "Find k", solution: "k = 3 so \\(y = 36\\)" },
+  { q: "If \\(y \\propto 1/x\\) and \\(y=10\\) when \\(x=2\\), find \\(y\\) when \\(x=5\\)", answer: "4", difficulty: "hard", tip: "yx constant", solution: "k = 20 so \\(y = 20/5 = 4\\)" },
+  { q: "If \\(y \\propto x\\) and \\(y=9\\) when \\(x=3\\), find \\(y\\) when \\(x=11\\)", answer: "33", difficulty: "hard", tip: "Find k", solution: "k = 3 so \\(y = 33\\)" }
+],
+  geometry_measures: [
+  // ===== Easy (1–20) =====
+  { q: "Calculate the perimeter of a rectangle with sides 5 cm and 3 cm", answer: "16", difficulty: "easy", tip: "Perimeter = sum of all sides", solution: "Perimeter = \\(2(5+3)=16\\)" },
+  { q: "Find the area of a rectangle with length 6 cm and width 4 cm", answer: "24", difficulty: "easy", tip: "Area = length × width", solution: "Area = \\(6 \\times 4 = 24\\)" },
+  { q: "What is the area of a square with side 5 cm?", answer: "25", difficulty: "easy", tip: "Area = side²", solution: "Area = \\(5^2 = 25\\)" },
+  { q: "Find the perimeter of a square with side 7 cm", answer: "28", difficulty: "easy", tip: "Perimeter = 4 × side", solution: "Perimeter = \\(4 \\times 7 = 28\\)" },
+  { q: "Calculate the area of a triangle with base 10 cm and height 6 cm", answer: "30", difficulty: "easy", tip: "Area = 1/2 × base × height", solution: "Area = \\(\\frac{1}{2} \\times 10 \\times 6 = 30\\)" },
+  { q: "Find the circumference of a circle with radius 7 cm (use \\(\\pi=3.14\\))", answer: "43.96", difficulty: "easy", tip: "Circumference = 2πr", solution: "Circumference = \\(2 \\times 3.14 \\times 7 = 43.96\\)" },
+  { q: "Find the area of a circle with radius 3 cm (use \\(\\pi=3.14\\))", answer: "28.26", difficulty: "easy", tip: "Area = πr²", solution: "Area = \\(3.14 \\times 3^2 = 28.26\\)" },
+  { q: "Convert 2 m to cm", answer: "200", difficulty: "easy", tip: "1 m = 100 cm", solution: "\\(2 \\times 100 = 200\\)" },
+  { q: "Convert 500 cm to m", answer: "5", difficulty: "easy", tip: "Divide by 100", solution: "\\(500 \\div 100 = 5\\)" },
+  { q: "How many degrees are in a straight line?", answer: "180", difficulty: "easy", tip: "Straight angle", solution: "A straight line is \\(180^\\circ\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "Find the area of a parallelogram with base 12 cm and height 5 cm", answer: "60", difficulty: "medium", tip: "Area = base × height", solution: "Area = \\(12 \\times 5 = 60\\)" },
+  { q: "Calculate the volume of a cube with side 4 cm", answer: "64", difficulty: "medium", tip: "Volume = side³", solution: "Volume = \\(4^3 = 64\\)" },
+  { q: "Find the volume of a cuboid with dimensions 5, 3 and 2 cm", answer: "30", difficulty: "medium", tip: "Multiply dimensions", solution: "Volume = \\(5 \\times 3 \\times 2 = 30\\)" },
+  { q: "Find the missing angle in a triangle: 50°, 60°, x", answer: "70", difficulty: "medium", tip: "Triangle angles sum to 180", solution: "x = \\(180 - 50 - 60 = 70\\)" },
+  { q: "Find the exterior angle of a regular hexagon", answer: "60", difficulty: "medium", tip: "Exterior = 360 ÷ n", solution: "Exterior = \\(360 \\div 6 = 60\\)" },
+  { q: "Calculate the circumference of a circle with diameter 10 cm (π=3.14)", answer: "31.4", difficulty: "medium", tip: "C = πd", solution: "Circumference = \\(3.14 \\times 10 = 31.4\\)" },
+  { q: "Find the area of a trapezium with parallel sides 8 cm and 4 cm and height 5 cm", answer: "30", difficulty: "medium", tip: "Area formula", solution: "Area = \\(\\frac{1}{2}(8+4)\\times5 = 30\\)" },
+  { q: "Convert 3.5 km to m", answer: "3500", difficulty: "medium", tip: "1 km = 1000 m", solution: "\\(3.5 \\times 1000 = 3500\\)" },
+  { q: "Find the interior angle of a regular pentagon", answer: "108", difficulty: "medium", tip: "Use polygon formula", solution: "Interior = \\(108^\\circ\\)" },
+  { q: "Calculate the area of a sector with angle 90° and radius 4 cm (π=3.14)", answer: "12.56", difficulty: "medium", tip: "Fraction of circle", solution: "Area = \\(\\frac{90}{360}\\times3.14\\times4^2 = 12.56\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "Find the hypotenuse of a right triangle with legs 6 cm and 8 cm", answer: "10", difficulty: "hard", tip: "Use Pythagoras", solution: "\\(c=\\sqrt{6^2+8^2}=10\\)" },
+  { q: "Find the area of a circle with diameter 14 cm (π=3.14)", answer: "153.86", difficulty: "hard", tip: "Radius is half diameter", solution: "Area = \\(3.14 \\times 7^2 = 153.86\\)" },
+  { q: "Calculate the volume of a cylinder with radius 3 cm and height 5 cm (π=3.14)", answer: "141.3", difficulty: "hard", tip: "Volume = πr²h", solution: "Volume = \\(3.14 \\times 3^2 \\times 5 = 141.3\\)" },
+  { q: "Find the interior angle of a regular 12-sided polygon", answer: "150", difficulty: "hard", tip: "Use polygon formula", solution: "Interior = \\(150^\\circ\\)" },
+  { q: "Find the length of the diagonal of a square with side 5 cm", answer: "7.07", difficulty: "hard", tip: "Use Pythagoras", solution: "Diagonal = \\(5\\sqrt{2} \\approx 7.07\\)" },
+  { q: "Calculate the surface area of a cube with side 6 cm", answer: "216", difficulty: "hard", tip: "Surface area = 6a²", solution: "Surface area = \\(6 \\times 6^2 = 216\\)" },
+  { q: "Find the missing angle in a triangle: 35°, 47°, x", answer: "98", difficulty: "hard", tip: "Angles sum to 180", solution: "x = \\(180 - 35 - 47 = 98\\)" },
+  { q: "Find the circumference of a circle with radius 9 cm (π=3.14)", answer: "56.52", difficulty: "hard", tip: "2πr", solution: "Circumference = \\(2 \\times 3.14 \\times 9 = 56.52\\)" }
+],
+  statistics: [
+  // ===== Easy (1–20) =====
+  { q: "Find the mean of: 4, 6, 8", answer: "6", difficulty: "easy", tip: "Add and divide by how many numbers", solution: "Mean = \\(\\frac{4+6+8}{3}=6\\)" },
+  { q: "Find the median of: 3, 5, 7", answer: "5", difficulty: "easy", tip: "Middle value", solution: "Median = \\(5\\)" },
+  { q: "Find the mode of: 2, 4, 4, 5", answer: "4", difficulty: "easy", tip: "Most frequent value", solution: "Mode = \\(4\\)" },
+  { q: "Find the range of: 6, 9, 12", answer: "6", difficulty: "easy", tip: "Highest − lowest", solution: "Range = \\(12-6=6\\)" },
+  { q: "Find the mean of: 10, 20, 30", answer: "20", difficulty: "easy", tip: "Add then divide", solution: "Mean = \\(\\frac{60}{3}=20\\)" },
+  { q: "Find the median of: 2, 5, 9, 11", answer: "7", difficulty: "easy", tip: "Average the middle two", solution: "Median = \\(\\frac{5+9}{2}=7\\)" },
+  { q: "Find the range of: 15, 18, 21, 25", answer: "10", difficulty: "easy", tip: "Highest − lowest", solution: "Range = \\(25-15=10\\)" },
+  { q: "Find the mode of: 6, 6, 7, 8", answer: "6", difficulty: "easy", tip: "Most common number", solution: "Mode = \\(6\\)" },
+  { q: "Find the mean of: 5, 7, 9, 11", answer: "8", difficulty: "easy", tip: "Sum ÷ frequency", solution: "Mean = \\(\\frac{32}{4}=8\\)" },
+  { q: "Find the median of: 1, 4, 6, 8, 10", answer: "6", difficulty: "easy", tip: "Middle value", solution: "Median = \\(6\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "Find the mean of: 12, 15, 18, 25", answer: "17.5", difficulty: "medium", tip: "Add then divide by 4", solution: "Mean = \\(\\frac{70}{4}=17.5\\)" },
+  { q: "The mean of five numbers is 8. What is their total?", answer: "40", difficulty: "medium", tip: "Mean × number of values", solution: "Total = \\(8 \\times 5 = 40\\)" },
+  { q: "Find the range of: 3, 9, 14, 20, 21", answer: "18", difficulty: "medium", tip: "Highest − lowest", solution: "Range = \\(21-3=18\\)" },
+  { q: "Find the median of: 4, 7, 9, 12, 15, 18", answer: "10.5", difficulty: "medium", tip: "Average middle pair", solution: "Median = \\(\\frac{9+12}{2}=10.5\\)" },
+  { q: "A set has mean 6 and contains 4 numbers. Find the total.", answer: "24", difficulty: "medium", tip: "Mean × frequency", solution: "Total = \\(6 \\times 4 = 24\\)" },
+  { q: "Find the mean of: 2, 5, 7, 10, 16", answer: "8", difficulty: "medium", tip: "Add then divide by 5", solution: "Mean = \\(\\frac{40}{5}=8\\)" },
+  { q: "The range of a data set is 15 and the smallest value is 7. Find the largest.", answer: "22", difficulty: "medium", tip: "Smallest + range", solution: "Largest = \\(7+15=22\\)" },
+  { q: "Find the mode of: 3, 5, 5, 6, 6, 6, 9", answer: "6", difficulty: "medium", tip: "Most frequent", solution: "Mode = \\(6\\)" },
+  { q: "Find the median of: 11, 13, 15, 17, 19, 21, 23", answer: "17", difficulty: "medium", tip: "Middle value", solution: "Median = \\(17\\)" },
+  { q: "Mean = 12 for 6 numbers. Find the total.", answer: "72", difficulty: "medium", tip: "Mean × frequency", solution: "Total = \\(12 \\times 6 = 72\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "The mean of 4 numbers is 10. Three numbers are 6, 9 and 15. Find the fourth.", answer: "10", difficulty: "hard", tip: "Find total then subtract", solution: "Total = \\(40\\), fourth = \\(40-30=10\\)" },
+  { q: "Find the mean of: 3, 7, 8, 12, 20", answer: "10", difficulty: "hard", tip: "Add carefully", solution: "Mean = \\(\\frac{50}{5}=10\\)" },
+  { q: "A data set has range 24 and maximum 31. Find the minimum.", answer: "7", difficulty: "hard", tip: "Max − range", solution: "Minimum = \\(31-24=7\\)" },
+  { q: "The mean of five numbers is 14. One number is removed and the new mean is 12. Find the removed number.", answer: "22", difficulty: "hard", tip: "Compare totals", solution: "Old total = \\(70\\), new total = \\(48\\), removed = \\(22\\)" },
+  { q: "Find the median of: 5, 8, 12, 14, 18, 21", answer: "13", difficulty: "hard", tip: "Average middle pair", solution: "Median = \\(\\frac{12+14}{2}=13\\)" },
+  { q: "The mean of 6 numbers is 9. Five numbers total 40. Find the sixth.", answer: "14", difficulty: "hard", tip: "Find full total first", solution: "Total = \\(54\\), sixth = \\(54-40=14\\)" },
+  { q: "Find the range of: 4, 9, 11, 19, 28", answer: "24", difficulty: "hard", tip: "Highest − lowest", solution: "Range = \\(28-4=24\\)" },
+  { q: "The mean of 8 values is 6. Find the total.", answer: "48", difficulty: "hard", tip: "Mean × frequency", solution: "Total = \\(6 \\times 8 = 48\\)" }
+],
+  probability: [
+  // ===== Easy (1–20) =====
+  { q: "A fair coin is flipped. Find the probability of heads.", answer: "1/2 0.5", difficulty: "easy", tip: "Two equally likely outcomes", solution: "P(Heads) = \\(\\frac{1}{2} = 0.5\\)" },
+  { q: "A fair six-sided die is rolled. Find the probability of getting a 3.", answer: "1/6 0.1667", difficulty: "easy", tip: "1 favourable outcome out of 6", solution: "P = \\(\\frac{1}{6} \\approx 0.1667\\)" },
+  { q: "A bag contains 3 red and 2 blue balls. Find P(red).", answer: "3/5 0.6", difficulty: "easy", tip: "Red ÷ total", solution: "P(red) = \\(\\frac{3}{5} = 0.6\\)" },
+  { q: "A bag has 4 green and 6 yellow counters. Find P(green).", answer: "2/5 0.4", difficulty: "easy", tip: "Favourable ÷ total", solution: "P(green) = \\(\\frac{4}{10} = 0.4\\)" },
+  { q: "Find the probability of NOT getting heads when flipping a fair coin.", answer: "1/2 0.5", difficulty: "easy", tip: "Use complement", solution: "P(not heads) = \\(1 - 0.5 = 0.5\\)" },
+  { q: "A fair die is rolled. Find P(even number).", answer: "1/2 0.5", difficulty: "easy", tip: "Even numbers are 2,4,6", solution: "P = \\(\\frac{3}{6} = 0.5\\)" },
+  { q: "A spinner has 8 equal sections. Find P(one specific section).", answer: "1/8 0.125", difficulty: "easy", tip: "1 out of 8", solution: "P = \\(\\frac{1}{8} = 0.125\\)" },
+  { q: "A bag has 1 red and 9 blue balls. Find P(red).", answer: "1/10 0.1", difficulty: "easy", tip: "Red ÷ total", solution: "P(red) = \\(\\frac{1}{10} = 0.1\\)" },
+  { q: "A fair coin is flipped. Find P(tails).", answer: "1/2 0.5", difficulty: "easy", tip: "Symmetry", solution: "P(tails) = \\(0.5\\)" },
+  { q: "A die is rolled. Find P(number greater than 4).", answer: "2/6 0.3", difficulty: "easy", tip: "Numbers 5 and 6", solution: "P = \\(\\frac{2}{6} = 0.3333\\)" },
+
+  // ===== Medium (21–40) =====
+  { q: "A bag contains 5 red, 3 blue and 2 green balls. Find P(blue).", answer: "3/10 0.3", difficulty: "medium", tip: "Blue ÷ total", solution: "P(blue) = \\(\\frac{3}{10} = 0.3\\)" },
+  { q: "Two fair coins are flipped. Find P(two heads).", answer: "1/4 0.25", difficulty: "medium", tip: "Multiply probabilities", solution: "P = \\(\\frac{1}{2} \\times \\frac{1}{2} = 0.25\\)" },
+  { q: "A fair die is rolled. Find P(prime number).", answer: "1/2 0.5", difficulty: "medium", tip: "Primes are 2,3,5", solution: "P = \\(\\frac{3}{6} = 0.5\\)" },
+  { q: "A bag has 7 red and 5 blue balls. One is picked. Find P(not red).", answer: "5/12 0.4167", difficulty: "medium", tip: "Use complement", solution: "P = \\(\\frac{5}{12} \\approx 0.4167\\)" },
+  { q: "Two fair dice are rolled. Find P(double six).", answer: "1/36 0.0278", difficulty: "medium", tip: "Multiply probabilities", solution: "P = \\(\\frac{1}{6}\\times\\frac{1}{6}=\\frac{1}{36}\\approx0.0278\\)" },
+  { q: "A bag has 4 red and 6 blue balls. Two are picked with replacement. Find P(red then red).", answer: "0.16", difficulty: "medium", tip: "Independent events", solution: "P = \\(0.4 \\times 0.4 = 0.16\\)" },
+  { q: "A spinner has 5 equal sections. Find P(not landing on a chosen section).", answer: "1/5 0.8", difficulty: "medium", tip: "Use complement", solution: "P = \\(1-\\frac{1}{5}=0.8\\)" },
+  { q: "A bag has 2 red and 8 blue balls. Find P(red).", answer: "2/10 0.2", difficulty: "medium", tip: "Red ÷ total", solution: "P(red) = \\(\\frac{2}{10}=0.2\\)" },
+  { q: "Two coins are flipped. Find P(at least one head).", answer: "3/4 0.75", difficulty: "medium", tip: "Use complement", solution: "P = \\(1-0.25=0.75\\)" },
+  { q: "A die is rolled. Find P(number less than 5).", answer: "4/6 0.6667", difficulty: "medium", tip: "Numbers 1–4", solution: "P = \\(\\frac{4}{6}=0.6667\\)" },
+
+  // ===== Hard (41–60) =====
+  { q: "A bag has 5 red and 7 blue balls. Two are picked without replacement. Find P(red then red).", answer: "0.1515", difficulty: "hard", tip: "Probabilities change", solution: "P = \\(\\frac{5}{12}\\times\\frac{4}{11}\\approx0.1515\\)" },
+  { q: "Two fair dice are rolled. Find P(sum equals 7).", answer: "0.1667", difficulty: "hard", tip: "Count favourable outcomes", solution: "P = \\(\\frac{6}{36}=0.1667\\)" },
+  { q: "A bag contains 3 red, 4 blue, 5 green. Find P(green).", answer: "0.4167", difficulty: "hard", tip: "Green ÷ total", solution: "P = \\(\\frac{5}{12}\\approx0.4167\\)" },
+  { q: "Two coins are flipped. Find P(exactly one head).", answer: "1/2 0.5", difficulty: "hard", tip: "List outcomes", solution: "P = \\(\\frac{2}{4}=0.5\\)" },
+  { q: "A die is rolled twice. Find P(two sixes).", answer: "0.0278", difficulty: "hard", tip: "Multiply", solution: "P = \\(\\frac{1}{36}\\approx0.0278\\)" },
+  { q: "A bag has 6 red and 4 blue balls. One is removed without replacement, then another. Find P(both blue).", answer: "0.1333", difficulty: "hard", tip: "Adjust totals", solution: "P = \\(\\frac{4}{10}\\times\\frac{3}{9}=0.1333\\)" },
+  { q: "A spinner numbered 1–10 is fair. Find P(number greater than 7).", answer: "3/10 0.3", difficulty: "hard", tip: "Count favourable", solution: "P = \\(\\frac{3}{10}=0.3\\)" },
+  { q: "A bag has 9 red and 3 blue balls. Find P(blue then red without replacement).", answer: "0.2045", difficulty: "hard", tip: "Multiply changing probabilities", solution: "P = \\(\\frac{3}{12}\\times\\frac{9}{11}\\approx0.2045\\)" }
+]
+}
+};
+
+let currentList=[], currentIndex=0, score=0;
+const maxHighScoreKey='gcse_quiz_highscore';
+const subjectSelect=document.getElementById("subjectSelect");
+const topicSelect=document.getElementById("topicSelect");
+const difficultySelect=document.getElementById("difficultySelect");
+const questionBox=document.getElementById("questionBox");
+const answerInput=document.getElementById("answerInput");
+const unitInput=document.getElementById("unitInput");
+
+answerInput.addEventListener("input", function(){
+    this.style.height = "auto";
+    this.style.height = this.scrollHeight + "px";
+});
+const feedback=document.getElementById("feedback");
+const hintBtn=document.getElementById("hintBtn");
+const submitBtn=document.getElementById("submitBtn");
+const nextBtn=document.getElementById("nextBtn");
+const scoreDiv=document.getElementById("score");
+const progressBar=document.getElementById("progressBar");
+const mathPreviewContent=document.getElementById("mathPreviewContent");
+const toolbar=document.getElementById("symbolToolbar");
+const keyboardToggle=document.getElementById("keyboardToggle");
+const confettiCanvas = document.getElementById("confettiCanvas");
+const confettiCtx = confettiCanvas.getContext("2d");
+
+function resizeConfettiCanvas(){
+    const dpr = window.devicePixelRatio || 1;
+
+    confettiCanvas.width = window.innerWidth * dpr;
+    confettiCanvas.height = window.innerHeight * dpr;
+
+    confettiCanvas.style.width = window.innerWidth + "px";
+    confettiCanvas.style.height = window.innerHeight + "px";
+
+    confettiCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+resizeConfettiCanvas();
+
+window.addEventListener("resize", resizeConfettiCanvas);
+window.addEventListener("orientationchange", resizeConfettiCanvas);
+
+let confettiParticles=[];
+
+// ---------- DROPDOWNS ----------
+function populateSubjects(){
+    subjectSelect.innerHTML='<option value="">Subject</option>';
+    Object.keys(QUESTIONS).forEach(sub=>{
+        const o=document.createElement("option"); o.value=sub; o.textContent=sub;
+        subjectSelect.appendChild(o);
+    });
+}
+subjectSelect.addEventListener("change",()=>{
+    topicSelect.innerHTML='<option value="">Topic</option>';
+    const sub=subjectSelect.value;
+    if(!sub) return;
+    Object.keys(QUESTIONS[sub]).forEach(topic=>{
+        const o=document.createElement("option"); o.value=topic; o.textContent=topic;
+        topicSelect.appendChild(o);
+    });
+    loadQuestions();
+});
+topicSelect.addEventListener("change",loadQuestions);
+difficultySelect.addEventListener("change",loadQuestions);
+populateSubjects();
+
+// ---------- LOAD & SHOW ----------
+function loadQuestions(){
+    const sub = subjectSelect.value;
+    const topic = topicSelect.value;
+    const diff = difficultySelect.value;
+    if(!sub||!topic||!diff){ questionBox.textContent="Select subject, topic, and difficulty."; return; }
+    currentList = QUESTIONS[sub][topic].filter(q=>q.difficulty===diff);
+    currentIndex=0; score=0; updateScore();
+    showQuestion();
+}
+function showQuestion() {
+    if (!currentList.length) {
+        questionBox.textContent = "No questions found.";
+        return;
+    }
+
+    const q = currentList[currentIndex];
+
+    // Insert the question HTML
+    questionBox.innerHTML = q.q;
+
+    // Clear answer
+    answerInput.value = "";
+
+    // Reset feedback and enable submit
+    feedback.innerHTML = "";
+    submitBtn.disabled = false;
+
+    // Ensure MathJax renders dynamically
+    if (window.MathJax) {
+        MathJax.typesetPromise([questionBox])
+            .catch((err) => console.log("MathJax rendering error:", err.message));
+    }
+
+    // Update progress bar
+    updateProgress();
+}
+
+// ---------- NORMALIZE & CHECK ----------
+function normalize(str){
+    if(!str) return "";
+    str = str.trim().toLowerCase().replace(/\s+/g,"");
+    str = str.replace(/÷/g,"/").replace(/×/g,"*").replace(/−/g,"-");
+    return str;
+}
+function numericEqual(user,correct,tol=0.01){
+    const u=parseFloat(user), c=parseFloat(correct);
+    if(!isNaN(u)&&!isNaN(c)) return Math.abs(u-c)<=tol;
+    return user===correct;
+}
+
+// ---------- SUBMIT ----------
+submitBtn.onclick = function(){
+    const q = currentList[currentIndex];
+
+    // Get user answer and normalize
+    let userAnswer = normalize(answerInput.value);
+
+    // Convert LaTeX fractions \frac{a}{b} to numeric a/b
+    userAnswer = userAnswer.replace(/\\frac\{(\d+)\}\{(\d+)\}/g, "$1/$2");
+
+    // Check if the numeric value matches
+    const userCorrect = numericEqual(userAnswer, normalize(q.answer));
+
+    // Display feedback
+    feedback.innerHTML = userCorrect ? 
+        `<span style="color:green;">✓ Correct! ${q.solution}</span>` :
+        `<span style="color:red;">✗ Wrong! Correct: ${q.answer}. ${q.solution}</span>`;
+
+    if(userCorrect){ 
+        score++; 
+        launchConfetti(); 
+        submitBtn.disabled = true; 
+    }
+
+    updateScore();
+
+    // Re-render MathJax for feedback
+    if(window.MathJax) MathJax.typesetPromise([feedback]);
+};
+
+// ---------- NEXT ----------
+nextBtn.onclick = function(){
+    currentIndex++;
+    if(currentIndex<currentList.length){ showQuestion(); }
+    else{
+        questionBox.textContent="Quiz Completed!";
+        answerInput.style.display=unitInput.style.display=submitBtn.style.display=nextBtn.style.display="none";
+        feedback.innerHTML=`Final Score: ${score} / ${currentList.length}`;
+        progressBar.style.width="100%";
+        updateHighScore();
+    }
+};
+
+// ---------- HINT ----------
+hintBtn.onclick=()=>{
+    const q=currentList[currentIndex];
+    feedback.textContent="Hint: "+(q.tip||"");
+    feedback.style.color="#ffcc00";
+    if(window.MathJax) MathJax.typesetPromise([feedback]);
+};
+
+// ---------- SCORE & PROGRESS ----------
+function updateScore(){ scoreDiv.textContent=`Score: ${score} / ${currentList.length} | High Score: ${getHighScore()}`; }
+function updateProgress(){ progressBar.style.width=(currentIndex/currentList.length*100)+"%"; }
+function getHighScore(){ return localStorage.getItem(maxHighScoreKey)||0; }
+function updateHighScore(){ if(score>getHighScore()) localStorage.setItem(maxHighScoreKey,score); }
+
+// ---------- MATH PREVIEW ----------
+answerInput.addEventListener("input",()=>{
+    let val = answerInput.value.trim();
+    if(!val){ mathPreviewContent.innerHTML="\\(\\)"; if(window.MathJax) MathJax.typesetPromise([mathPreviewContent]); return; }
+    val = val.replace(/÷/g,"/"); 
+    val = val.replace(/(\d+)\s*\/\s*(\d+)/g, "\\frac{$1}{$2}");
+    val = val.replace(/sqrt\(([^)]+)\)/gi,"\\sqrt{$1}");
+    val = val.replace(/\bpi\b/gi,"\\pi");
+    val = val.replace(/×/g,"\\cdot ").replace(/−/g,"-");
+    mathPreviewContent.innerHTML=`\\(${val}\\)`;
+    if(window.MathJax) MathJax.typesetPromise([mathPreviewContent]);
+});
+
+// ---------- SYMBOL KEYBOARD ----------
+// Insert symbols or templates
+function insertAtCursor(text){
+    const start = answerInput.selectionStart;
+    const end = answerInput.selectionEnd;
+    answerInput.value = answerInput.value.slice(0, start) + text + answerInput.value.slice(end);
+    answerInput.selectionStart = answerInput.selectionEnd = start + text.length;
+    answerInput.focus();
+    answerInput.dispatchEvent(new Event('input'));
+}
+
+function insertTemplate(type){
+    const start = answerInput.selectionStart;
+    const end = answerInput.selectionEnd;
+    if(type === "fraction"){
+        answerInput.value = answerInput.value.slice(0, start) + "\\frac{}{}" + answerInput.value.slice(end);
+        answerInput.selectionStart = answerInput.selectionEnd = start + 6;
+    } else if(type === "power"){
+        answerInput.value = answerInput.value.slice(0, start) + "^2" + answerInput.value.slice(end);
+        answerInput.selectionStart = answerInput.selectionEnd = start + 2;
+    } else if(type === "sqrt"){
+        answerInput.value = answerInput.value.slice(0, start) + "\\sqrt{}" + answerInput.value.slice(end);
+        answerInput.selectionStart = answerInput.selectionEnd = start + 6; 
+    }else if(type === "scientific"){
+    const start = answerInput.selectionStart;
+    // Inserts the scientific notation template: "×10^{}"
+    answerInput.value = answerInput.value.slice(0,start) + " \\times 10^{}" + answerInput.value.slice(answerInput.selectionEnd);
+    // Put cursor inside the exponent
+    answerInput.selectionStart = answerInput.selectionEnd = start + 9; 
+    }
+	
+    answerInput.focus();
+    answerInput.dispatchEvent(new Event('input'));
+}
+
+// Handle all symbol buttons
+document.querySelectorAll(".symbol-btn").forEach(btn => {
+    btn.onclick = () => {
+        if(btn.dataset.template){
+            insertTemplate(btn.dataset.template);
+        } else if(btn.id !== "backspaceBtn"){
+            insertAtCursor(btn.dataset.symbol);
+        }
+    };
+});
+
+// Backspace button
+document.getElementById("backspaceBtn").onclick = () => {
+    const start = answerInput.selectionStart;
+    const end = answerInput.selectionEnd;
+
+    if(start === 0 && end === 0) return;
+
+    if(start !== end){
+        // delete selection
+        answerInput.value = answerInput.value.slice(0, start) + answerInput.value.slice(end);
+        answerInput.selectionStart = answerInput.selectionEnd = start;
+    } else {
+        // delete one char before cursor
+        answerInput.value = answerInput.value.slice(0, start-1) + answerInput.value.slice(end);
+        answerInput.selectionStart = answerInput.selectionEnd = start-1;
+    }
+
+    answerInput.focus();
+    answerInput.dispatchEvent(new Event('input'));
+};
+keyboardToggle.onclick=()=>{ toolbar.style.display=(toolbar.style.display==="none"||toolbar.style.display==="")?"grid":"none"; };
+
+// ---------- CONFETTI ----------
+function launchConfetti(){
+    for(let i=0;i<600;i++){ confettiParticles.push({x:Math.random()*confettiCanvas.width,y:Math.random()*confettiCanvas.height-50,r:Math.random()*6+4,d:Math.random()*50+10,color:`hsl(${Math.random()*360},100%,50%)`,tilt:Math.random()*10-10,tiltAngleIncrement:Math.random()*0.07+0.05,tiltAngle:0}); }
+    requestAnimationFrame(updateConfetti);
+}
+function updateConfetti(){
+    confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    confettiParticles.forEach(p=>{
+        p.tiltAngle+=p.tiltAngleIncrement;
+        p.y+=(Math.cos(p.d)+3+p.r/2)/2;
+        p.x+=Math.sin(p.d); p.tilt=Math.sin(p.tiltAngle)*15;
+        confettiCtx.beginPath();
+        confettiCtx.lineWidth=p.r/2;
+        confettiCtx.strokeStyle=p.color;
+        confettiCtx.moveTo(p.x+p.tilt+p.r/4,p.y);
+        confettiCtx.lineTo(p.x+p.tilt,p.y+p.tilt+p.r/4);
+        confettiCtx.stroke();
+    });
+    confettiParticles=confettiParticles.filter(p=>p.y<confettiCanvas.height+50);
+    if(confettiParticles.length>0) requestAnimationFrame(updateConfetti);
+}
+
+// ---------- ATOMS BACKGROUND ----------
+// ---------- ATOMS BACKGROUND ----------
+
+const atomsCanvas = document.getElementById("atomsCanvas");
+const ctxAtoms = atomsCanvas.getContext("2d");
+
+let atomsParticles=[];
+
+function resizeAtomsCanvas(){
+
+    const dpr = window.devicePixelRatio || 1;
+
+    atomsCanvas.width = window.innerWidth * dpr;
+    atomsCanvas.height = window.innerHeight * dpr;
+
+    atomsCanvas.style.width = window.innerWidth + "px";
+    atomsCanvas.style.height = window.innerHeight + "px";
+
+    ctxAtoms.setTransform(dpr,0,0,dpr,0,0);
+}
+
+resizeAtomsCanvas();
+
+window.addEventListener("resize", resizeAtomsCanvas);
+window.addEventListener("orientationchange", resizeAtomsCanvas);
+
+function initAtoms(){
+
+    atomsParticles=[];
+
+    const particleCount = window.innerWidth < 600 ? 400 : 150;
+
+    for(let i=0;i<particleCount;i++){
+
+        atomsParticles.push({
+            x:Math.random()*window.innerWidth,
+            y:Math.random()*window.innerHeight,
+            r:Math.random()*3+2,
+            dx:(Math.random()-0.5)*1.2,
+            dy:(Math.random()-0.5)*1.2
+        });
+
+    }
+
+}
+
+const maxDist = 120;
+const maxDistSq = maxDist * maxDist;
+
+function drawAtoms(){
+
+    ctxAtoms.clearRect(0,0,atomsCanvas.width,atomsCanvas.height);
+
+    for(let i=0;i<atomsParticles.length;i++){
+
+        const p = atomsParticles[i];
+
+        ctxAtoms.beginPath();
+        ctxAtoms.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctxAtoms.fillStyle="#66ccff";
+        ctxAtoms.fill();
+
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if(p.x<0||p.x>window.innerWidth) p.dx*=-1;
+        if(p.y<0||p.y>window.innerHeight) p.dy*=-1;
+
+        for(let j=i+1;j<atomsParticles.length;j++){
+
+            const p2 = atomsParticles[j];
+
+            const dx=p.x-p2.x;
+            const dy=p.y-p2.y;
+
+            const distSq=dx*dx+dy*dy;
+
+            if(distSq < maxDistSq){
+
+                const opacity = 1 - distSq/maxDistSq;
+
+                ctxAtoms.strokeStyle=`rgba(102,204,255,${opacity})`;
+                ctxAtoms.lineWidth=1;
+
+                ctxAtoms.beginPath();
+                ctxAtoms.moveTo(p.x,p.y);
+                ctxAtoms.lineTo(p2.x,p2.y);
+                ctxAtoms.stroke();
+
+            }
+
+        }
+
+    }
+
+    requestAnimationFrame(drawAtoms);
+
+}
+
+initAtoms();
+drawAtoms();
+});
+</script>
+</body>
+</html>
